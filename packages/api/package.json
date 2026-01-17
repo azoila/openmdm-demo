@@ -1,0 +1,28 @@
+{
+  "name": "@openmdm-demo/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@openmdm-demo/auth": "workspace:*",
+    "@openmdm-demo/db": "workspace:*",
+    "@openmdm-demo/env": "workspace:*",
+    "@orpc/client": "catalog:",
+    "@orpc/openapi": "catalog:",
+    "@orpc/server": "catalog:",
+    "@orpc/zod": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@openmdm-demo/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}

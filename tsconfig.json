@@ -1,0 +1,3 @@
+{
+  "extends": "@openmdm-demo/config/tsconfig.base.json"
+}
