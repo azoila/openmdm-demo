@@ -17,8 +17,11 @@
   },
   "dependencies": {
     "@openmdm-demo/env": "workspace:*",
+    "@openmdm/core": "^0.2.0",
+    "@openmdm/drizzle-adapter": "^0.2.0",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.1",
+    "nanoid": "^5.0.0",
     "pg": "^8.17.1",
     "zod": "catalog:"
   },

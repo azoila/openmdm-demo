@@ -1,0 +1,99 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: openmdm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: openmdm
+      POSTGRES_PASSWORD: openmdm123
+      POSTGRES_DB: openmdm
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U openmdm -d openmdm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MQTT Broker (Eclipse Mosquitto)
+  mqtt:
+    image: eclipse-mosquitto:2
+    container_name: openmdm-mqtt
+    restart: unless-stopped
+    ports:
+      - "1883:1883"   # MQTT
+      - "9001:9001"   # WebSocket
+    volumes:
+      - mqtt_data:/mosquitto/data
+      - mqtt_logs:/mosquitto/log
+      - ./docker/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    healthcheck:
+      test: ["CMD", "mosquitto_sub", "-t", "$$SYS/#", "-C", "1", "-i", "healthcheck", "-W", "3"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # MinIO (S3-compatible storage for APKs)
+  minio:
+    image: minio/minio:latest
+    container_name: openmdm-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: openmdm
+      MINIO_ROOT_PASSWORD: openmdm123
+    ports:
+      - "9000:9000"   # API
+      - "9002:9001"   # Console (mapped to 9002 to avoid conflict with MQTT WebSocket)
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO setup - creates default bucket
+  minio-setup:
+    image: minio/mc:latest
+    container_name: openmdm-minio-setup
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set openmdm http://minio:9000 openmdm openmdm123;
+      mc mb openmdm/apks --ignore-existing;
+      mc anonymous set download openmdm/apks;
+      echo 'MinIO bucket created successfully';
+      exit 0;
+      "
+
+  # Redis (optional - for caching and session storage)
+  redis:
+    image: redis:7-alpine
+    container_name: openmdm-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
+  mqtt_data:
+  mqtt_logs:
+  minio_data:
+  redis_data:
+
+networks:
+  default:
+    name: openmdm-network
