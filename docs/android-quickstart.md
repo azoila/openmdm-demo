@@ -157,6 +157,22 @@ agent itself, becomes Device Owner, and auto-enrolls. It needs two things the
 emulator path doesn't: a **hosted APK** and its **signing-certificate
 checksum**.
 
+> **Shortcut — use the prebuilt demo APK.** Every
+> [openmdm-android release](https://github.com/azoila/openmdm-android/releases)
+> ships a signed, generic agent APK, already hosted at a public HTTPS URL
+> with a published checksum, so you can skip steps 1–3 entirely:
+>
+> ```
+> apkUrl:   https://github.com/azoila/openmdm-android/releases/download/v0.3.0/openmdm-agent-v0.3.0.apk
+> checksum: 9_sjHlnmSXCohJMV4nYtB5mppANaAuMBmUTuBM5OvIE
+> ```
+>
+> (For newer releases, take both values from that release's
+> `provisioning-checksum.txt`.) The demo APK has no compiled-in device
+> secret, so it enrolls via the pinned-key path — which this demo server
+> supports out of the box — and no TLS pin, so your MDM `serverUrl` must be
+> HTTPS or a cleartext-allowed host. Jump to step 4.
+
 ### 1. Build a release-style APK
 
 ```bash
