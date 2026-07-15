@@ -10,6 +10,7 @@ import { ZodToJsonSchemaConverter } from "@orpc/zod/zod4";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import QRCode from "qrcode";
 import { honoAdapter } from "@openmdm/hono";
 import {
   mdm,
@@ -181,6 +182,79 @@ app.post("/mdm/devices/:id/kiosk/disable", async (c) => {
 });
 
 // ============================================
+// Android Enrollment — QR Provisioning
+// ============================================
+
+// Emits the Android device-owner provisioning payload the OpenMDM agent's
+// QREnrollmentParser understands: the standard DPC extras plus the
+// `openmdm.*` admin-extras bundle (server URL, enrollment secret). Scan it
+// on a factory-reset device (tap the welcome screen 6 times) to install the
+// agent and enroll against this server. See docs/android-quickstart.md.
+//
+// The payload contains MDM_DEVICE_SECRET, so this route requires a
+// dashboard session.
+//
+// Query params:
+//   format=svg            render a scannable QR (default: raw JSON payload)
+//   serverUrl=<url>       MDM base URL as reachable FROM THE DEVICE
+//                         (default: BETTER_AUTH_URL + /mdm — localhost only
+//                         works for emulators via 10.0.2.2)
+//   apkUrl=<url>          agent APK download location (required for
+//                         factory-reset provisioning; omit if the agent is
+//                         already installed)
+//   checksum=<base64url>  APK signing-cert SHA-256, URL-safe base64
+//                         (required alongside apkUrl)
+//   policyId, groupId     optional initial assignment
+app.get("/mdm/enrollment/qr", async (c) => {
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  if (!session?.user) {
+    return c.json(
+      { error: "Authentication required — sign in to the dashboard first" },
+      401
+    );
+  }
+
+  const serverUrl = c.req.query("serverUrl") ?? `${env.BETTER_AUTH_URL}/mdm`;
+  const apkUrl = c.req.query("apkUrl");
+  const checksum = c.req.query("checksum");
+  const policyId = c.req.query("policyId");
+  const groupId = c.req.query("groupId");
+
+  const payload: Record<string, unknown> = {
+    "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_NAME":
+      "com.openmdm.agent",
+    "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME":
+      "com.openmdm.agent/.receiver.MDMDeviceAdminReceiver",
+    "android.app.extra.PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED": true,
+    "android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE": {
+      "openmdm.server_url": serverUrl,
+      "openmdm.device_secret": env.MDM_DEVICE_SECRET,
+      ...(policyId ? { "openmdm.policy_id": policyId } : {}),
+      ...(groupId ? { "openmdm.group_id": groupId } : {}),
+    },
+  };
+  if (apkUrl) {
+    payload["android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION"] =
+      apkUrl;
+  }
+  if (checksum) {
+    payload["android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM"] =
+      checksum;
+  }
+
+  if (c.req.query("format") === "svg") {
+    const svg = await QRCode.toString(JSON.stringify(payload), {
+      type: "svg",
+      errorCorrectionLevel: "M",
+      margin: 2,
+    });
+    return c.body(svg, 200, { "Content-Type": "image/svg+xml" });
+  }
+
+  return c.json(payload);
+});
+
+// ============================================
 // Bulk Operations Endpoints
 // ============================================
 
@@ -271,13 +345,18 @@ app.get("/", (c) => {
         core: {
           health: "GET /mdm/health",
           agent: {
-            enroll: "POST /mdm/agent/enroll",
+            enroll: "POST /mdm/agent/enroll (rate-limited)",
+            enrollChallenge: "GET /mdm/agent/enroll/challenge (rate-limited)",
+            refreshToken: "POST /mdm/agent/refresh-token",
             heartbeat: "POST /mdm/agent/heartbeat",
             config: "GET /mdm/agent/config",
             pushToken: "POST /mdm/agent/push-token",
+            pushTokenRemove: "DELETE /mdm/agent/push-token",
+            commandsPending: "GET /mdm/agent/commands/pending",
             commandAck: "POST /mdm/agent/commands/:id/ack",
             commandComplete: "POST /mdm/agent/commands/:id/complete",
             commandFail: "POST /mdm/agent/commands/:id/fail",
+            events: "POST /mdm/agent/events",
           },
           devices: "GET|POST|PATCH|DELETE /mdm/devices/*",
           policies: "GET|POST|PATCH|DELETE /mdm/policies/*",
@@ -308,6 +387,10 @@ app.get("/", (c) => {
           toDevice: "POST /mdm/apps/:pkg/deploy/device/:deviceId",
           toGroup: "POST /mdm/apps/:pkg/deploy/group/:groupId",
           toPolicy: "POST /mdm/apps/:pkg/deploy/policy/:policyId",
+        },
+        // Android enrollment
+        enrollment: {
+          qr: "GET /mdm/enrollment/qr?format=svg[&serverUrl=...&apkUrl=...&checksum=...] (requires session)",
         },
         // Kiosk mode
         kiosk: {

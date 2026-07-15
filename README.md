@@ -122,6 +122,17 @@ Default database connection (works with Docker Compose):
 DATABASE_URL=postgresql://openmdm:openmdm123@localhost:5432/openmdm
 ```
 
+Then set the two required secrets (each at least 32 characters):
+```env
+BETTER_AUTH_SECRET=<random 32+ char string>
+MDM_DEVICE_SECRET=<random 32+ char string>
+```
+
+`MDM_DEVICE_SECRET` is the HMAC secret devices sign enrollment requests with —
+the Android agent must be provisioned with the same value (via the QR /
+zero-touch enrollment payload). OpenMDM no longer accepts unauthenticated
+enrollment.
+
 ### 5. Setup Database
 
 ```bash
@@ -137,6 +148,14 @@ bun run dev
 Open your browser:
 - **Web App**: http://localhost:3001
 - **API Server**: http://localhost:3000
+
+### 7. Enroll Your First Android Device
+
+Follow the **[Android Quick Start](docs/android-quickstart.md)** — from this
+point, an emulator-based device takes about 10 minutes to enroll and manage
+(no Android Enterprise experience needed). It covers both the ADB developer
+flow and real factory-reset QR provisioning, with expected outputs and
+troubleshooting for every step.
 
 ---
 
@@ -226,8 +245,11 @@ bun run db:studio        # Open Drizzle Studio (database UI)
 DATABASE_URL=postgresql://openmdm:openmdm123@localhost:5432/openmdm
 
 # Authentication
-BETTER_AUTH_SECRET=your-secret-key-here
+BETTER_AUTH_SECRET=your-secret-key-here-min-32-chars
 BETTER_AUTH_URL=http://localhost:3000
+
+# Device enrollment (required — shared with the Android agent)
+MDM_DEVICE_SECRET=your-device-enrollment-secret-min-32-chars
 
 # MQTT (optional)
 MQTT_BROKER_URL=mqtt://localhost:1883

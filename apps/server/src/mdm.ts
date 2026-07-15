@@ -6,7 +6,9 @@
 
 import { createMDM } from "@openmdm/core";
 import { drizzleAdapter } from "@openmdm/drizzle-adapter";
+import { auth } from "@openmdm-demo/auth";
 import { db } from "@openmdm-demo/db";
+import type { Context } from "hono";
 import {
   mdmDevices,
   mdmPolicies,
@@ -16,6 +18,12 @@ import {
   mdmGroups,
   mdmDeviceGroups,
   mdmPushTokens,
+  mdmPolicyVersions,
+  mdmDeviceApps,
+  mdmPluginStorage,
+  mdmEnrollmentChallenges,
+  mdmAppVersions,
+  mdmRollbacks,
 } from "@openmdm-demo/db/schema/mdm";
 import { env } from "@openmdm-demo/env/server";
 
@@ -33,6 +41,16 @@ const databaseAdapter = drizzleAdapter(db as any, {
     groups: mdmGroups,
     deviceGroups: mdmDeviceGroups,
     pushTokens: mdmPushTokens,
+    // Policy history — enables policies.history() and policies.rollback()
+    policyVersions: mdmPolicyVersions,
+    // Canonical app inventory — enables mdm.updates and per-version device queries
+    deviceApps: mdmDeviceApps,
+    // Durable storage for plugins (kiosk, geofence)
+    pluginStorage: mdmPluginStorage,
+    // Device-pinned-key enrollment challenges
+    enrollmentChallenges: mdmEnrollmentChallenges,
+    appVersions: mdmAppVersions,
+    rollbacks: mdmRollbacks,
   },
 });
 
@@ -44,16 +62,44 @@ export const mdm = createMDM({
   database: databaseAdapter,
   serverUrl: env.BETTER_AUTH_URL,
 
-  // Enrollment configuration
+  // Admin-route authentication. honoAdapter enforces auth on admin routes by
+  // default and calls getUser with the Hono context — here backed by the same
+  // better-auth session the dashboard uses.
+  auth: {
+    getUser: async <T = unknown>(context: unknown): Promise<T | null> => {
+      const c = context as Context;
+      const session = await auth.api.getSession({
+        headers: c.req.raw.headers,
+      });
+      return (session?.user as T) ?? null;
+    },
+  },
+
+  // Enrollment configuration. deviceSecret is required — agents must sign
+  // enrollment requests; signed timestamps are checked for freshness so a
+  // captured request can't be replayed.
   enrollment: {
     autoEnroll: true,
-    // In production, use: deviceSecret: env.MDM_DEVICE_SECRET
+    deviceSecret: env.MDM_DEVICE_SECRET,
   },
 
   // Push notification (polling for demo, FCM/MQTT for production)
   push: {
     provider: "polling",
     pollingInterval: 30,
+  },
+
+  // Durable plugin state (zones, kiosk state) — survives restarts
+  pluginStorage: {
+    adapter: "database",
+  },
+
+  // Command delivery durability (defaults shown for visibility)
+  commands: {
+    defaultTtlSeconds: 7 * 24 * 60 * 60, // expire undelivered commands after 7 days
+    defaultMaxAttempts: 5, // dead-letter after 5 delivery attempts
+    retryBackoffSeconds: 60, // exponential backoff base between attempts
+    ackTimeoutSeconds: 15 * 60, // requeue commands stuck in `acknowledged`
   },
 
   // Webhook configuration for external integrations
@@ -261,6 +307,26 @@ export async function initializeMDM(): Promise<void> {
     }
   }
 
+  // Delivery sweeps: retry failed pushes, reap expired commands, and requeue
+  // commands a device acknowledged but never completed. Core exposes these as
+  // explicit sweeps so the host controls scheduling; a plain interval is
+  // enough for a single-process demo.
+  const SWEEP_INTERVAL_MS = 60_000;
+  setInterval(async () => {
+    try {
+      const retried = await mdm.commands.retryPending();
+      const expired = await mdm.commands.expireStale();
+      const stuck = await mdm.commands.sweepStuck();
+      if (retried.retried > 0 || expired > 0 || stuck.requeued > 0) {
+        console.log(
+          `[MDM] Delivery sweep: ${retried.retried} retried, ${retried.deadLettered} dead-lettered, ${expired} expired, ${stuck.requeued} requeued`
+        );
+      }
+    } catch (error) {
+      console.error("[MDM] Delivery sweep failed:", error);
+    }
+  }, SWEEP_INTERVAL_MS);
+
   initialized = true;
   console.log("[MDM] Initialization complete");
 }
@@ -309,7 +375,7 @@ export const deviceOperations = {
    * Block device and optionally wipe
    */
   async blockDevice(deviceId: string, reason: string, wipe = false) {
-    await mdm.devices.update(deviceId, { status: "blocked" });
+    await mdm.devices.block(deviceId, reason);
 
     if (wipe) {
       await mdm.devices.wipe(deviceId, false);
@@ -586,7 +652,7 @@ export const analytics = {
 
     // Low battery
     const lowBattery = enrolled.filter(
-      (d) => d.batteryLevel !== null && d.batteryLevel < 20
+      (d) => d.batteryLevel != null && d.batteryLevel < 20
     );
 
     // Command stats (last 24h)

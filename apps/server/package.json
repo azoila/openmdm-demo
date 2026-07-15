@@ -14,20 +14,22 @@
     "@openmdm-demo/auth": "workspace:*",
     "@openmdm-demo/db": "workspace:*",
     "@openmdm-demo/env": "workspace:*",
-    "@openmdm/core": "^0.3.0",
-    "@openmdm/drizzle-adapter": "^0.2.1",
-    "@openmdm/hono": "^0.2.1",
+    "@openmdm/core": "^0.10.0",
+    "@openmdm/drizzle-adapter": "^0.6.1",
+    "@openmdm/hono": "^1.1.0",
     "@orpc/openapi": "catalog:",
     "@orpc/server": "catalog:",
     "@orpc/zod": "catalog:",
     "better-auth": "catalog:",
     "dotenv": "catalog:",
     "hono": "^4.8.2",
+    "qrcode": "^1.5.4",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@openmdm-demo/config": "workspace:*",
     "@types/bun": "catalog:",
+    "@types/qrcode": "^1.5.6",
     "tsdown": "^0.16.5",
     "typescript": "catalog:"
   }
