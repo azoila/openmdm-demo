@@ -186,15 +186,18 @@ python3 -m http.server 8080
 ### 3. Compute the signing-certificate checksum
 
 Android verifies the downloaded DPC against the SHA-256 of its **signing
-certificate**, URL-safe-base64-encoded:
+certificate**, URL-safe-base64-encoded. Use `apksigner` from the Android SDK
+build-tools (the agent is signed with APK Signature Scheme v2+, which
+`keytool -printcert -jarfile` cannot read):
 
 ```bash
-keytool -printcert -jarfile agent-debug.apk | grep 'SHA256:' \
-  | awk '{print $2}' | tr -d ':' | xxd -r -p \
-  | base64 | tr '+/' '-_' | tr -d '='
+BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
+"$BT/apksigner" verify --print-certs agent-debug.apk \
+  | awk '/certificate SHA-256 digest/ {print $NF; exit}' \
+  | xxd -r -p | base64 | tr '+/' '-_' | tr -d '='
 ```
 
-Expected output: a 43-character string like `gJD-hR3v…` — that's your
+Expected output: a 43-character string like `BrRiUHX25-NB…` — that's your
 `checksum`.
 
 ### 4. Generate the QR code from the demo server
