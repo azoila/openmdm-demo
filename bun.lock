@@ -23,9 +23,9 @@
         "@openmdm-demo/auth": "workspace:*",
         "@openmdm-demo/db": "workspace:*",
         "@openmdm-demo/env": "workspace:*",
-        "@openmdm/core": "^0.10.0",
-        "@openmdm/drizzle-adapter": "^0.6.1",
-        "@openmdm/hono": "^1.1.0",
+        "@openmdm/core": "^0.11.0",
+        "@openmdm/drizzle-adapter": "^0.6.3",
+        "@openmdm/hono": "^1.1.1",
         "@orpc/openapi": "catalog:",
         "@orpc/server": "catalog:",
         "@orpc/zod": "catalog:",
@@ -124,8 +124,8 @@
       "name": "@openmdm-demo/db",
       "dependencies": {
         "@openmdm-demo/env": "workspace:*",
-        "@openmdm/core": "^0.10.0",
-        "@openmdm/drizzle-adapter": "^0.6.1",
+        "@openmdm/core": "^0.11.0",
+        "@openmdm/drizzle-adapter": "^0.6.3",
         "dotenv": "catalog:",
         "drizzle-orm": "^0.45.1",
         "nanoid": "^5.0.0",
@@ -445,11 +445,11 @@
 
     "@openmdm-demo/env": ["@openmdm-demo/env@workspace:packages/env"],
 
-    "@openmdm/core": ["@openmdm/core@0.10.0", "", { "dependencies": { "nanoid": "^5.0.0" } }, "sha512-mDIZAN0EJ8IyyGFcY6/BoXuWTyr9VrlUq+gU4sxbMKN4KptDk4Mjl4Z99vykq2BMPgKlWJaOOyFw+W2CtF4k3A=="],
+    "@openmdm/core": ["@openmdm/core@0.11.0", "", { "dependencies": { "nanoid": "^5.0.0" } }, "sha512-Ko+mmQDHM69omCR+a9tN2vuXaDLo6TntH76Ix7EcV2OIaBFH5WpVYR7okG/u6cmgzc39iCvB0lxZpfYGyU7dPQ=="],
 
-    "@openmdm/drizzle-adapter": ["@openmdm/drizzle-adapter@0.6.1", "", { "dependencies": { "@openmdm/core": "0.10.0", "nanoid": "^5.0.0" }, "peerDependencies": { "drizzle-orm": ">=0.30.0" } }, "sha512-bRYig/opChdTUO/Y/Q6gDhtqYDu4tx52oPwBCLu4v5rPOpm+ewShnSD/tTah65RJMu0iM4hQ2DrZH14e7H8fOQ=="],
+    "@openmdm/drizzle-adapter": ["@openmdm/drizzle-adapter@0.6.3", "", { "dependencies": { "@openmdm/core": "0.11.0", "nanoid": "^5.0.0" }, "peerDependencies": { "drizzle-orm": ">=0.30.0" } }, "sha512-m1b2QGFpv//pWyT/0bkJeOjnWI5jASbP1jFhKCkKLxu0MYsroSwbH2CFDVYf2/jf9WJfzk+AZOeOrvfXbsMyFw=="],
 
-    "@openmdm/hono": ["@openmdm/hono@1.1.0", "", { "dependencies": { "@openmdm/core": "0.10.0" }, "peerDependencies": { "hono": ">=4.0.0" } }, "sha512-v9txfDd+0eDoxTnW/u3Y8FuEy/o46f3xweB9y0fNOac0wW9hoyG+oU3cNWJ/REnctcPcyN+96J+8b3CDNBXWbg=="],
+    "@openmdm/hono": ["@openmdm/hono@1.1.1", "", { "dependencies": { "@openmdm/core": "0.11.0" }, "peerDependencies": { "hono": ">=4.0.0" } }, "sha512-kX2Fbv873vdz8iZrZ4p4LrVnukn4s384KcQ3XUGU5DY6gXkIfGeYUseAZ8rFQJgB55rw9Dps6dMLH+iMWpfp8A=="],
 
     "@orpc/client": ["@orpc/client@1.13.4", "", { "dependencies": { "@orpc/shared": "1.13.4", "@orpc/standard-server": "1.13.4", "@orpc/standard-server-fetch": "1.13.4", "@orpc/standard-server-peer": "1.13.4" } }, "sha512-s13GPMeoooJc5Th2EaYT5HMFtWG8S03DUVytYfJv8pIhP87RYKl94w52A36denH6r/B4LaAgBeC9nTAOslK+Og=="],
 
