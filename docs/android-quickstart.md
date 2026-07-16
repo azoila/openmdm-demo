@@ -163,7 +163,7 @@ checksum**.
 > with a published checksum, so you can skip steps 1–3 entirely:
 >
 > ```
-> apkUrl:   https://github.com/azoila/openmdm-android/releases/download/v0.3.0/openmdm-agent-v0.3.0.apk
+> apkUrl:   https://github.com/azoila/openmdm-android/releases/download/v0.4.0/openmdm-agent-v0.4.0.apk
 > checksum: 9_sjHlnmSXCohJMV4nYtB5mppANaAuMBmUTuBM5OvIE
 > ```
 >
