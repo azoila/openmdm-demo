@@ -216,10 +216,15 @@ BT="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)"
 Expected output: a 43-character string like `BrRiUHX25-NB…` — that's your
 `checksum`.
 
-### 4. Generate the QR code from the demo server
+### 4. Generate the QR code from the dashboard
 
-Sign in to the dashboard (http://localhost:3001), then open in the same
-browser:
+Sign in to the dashboard (http://localhost:3001) and open **Enrollment** in
+the sidebar. On the *QR Provisioning* tab, fill in the server URL, APK URL,
+and checksum, then scan the rendered QR (or click *Show JSON payload* to
+inspect the raw provisioning JSON).
+
+The page drives `GET /mdm/enrollment/qr` on the server; if you prefer, you
+can still call it directly in a signed-in browser:
 
 ```
 http://localhost:3000/mdm/enrollment/qr?format=svg
@@ -228,9 +233,9 @@ http://localhost:3000/mdm/enrollment/qr?format=svg
   &checksum=<from step 3>
 ```
 
-(one line, no spaces). You get a scannable QR. Drop `format=svg` to inspect
-the raw JSON payload — it's the standard Android provisioning format plus an
-`openmdm.*` extras bundle carrying the server URL and enrollment secret.
+(one line, no spaces). Drop `format=svg` to get the raw JSON payload — it's
+the standard Android provisioning format plus an `openmdm.*` extras bundle
+carrying the server URL and enrollment secret.
 
 > `serverUrl` and `apkUrl` must be reachable **from the device**, so use your
 > machine's LAN IP, never `localhost`.

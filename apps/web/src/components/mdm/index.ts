@@ -9,3 +9,4 @@ export { KioskDialog } from "./kiosk-dialog";
 export { PolicyManagement } from "./policy-management";
 export { AppManagement } from "./app-management";
 export { GroupManagement } from "./group-management";
+export { EnrollmentOnboarding } from "./enrollment-onboarding";

@@ -26,6 +26,7 @@ import {
   LogOut,
   HelpCircle,
   Menu,
+  QrCode,
 } from "lucide-react";
 import { useState } from "react";
 import type { Route } from "next";
@@ -40,6 +41,11 @@ const navigationItems = [
     title: "Devices",
     href: "/dashboard/devices" as Route,
     icon: Smartphone,
+  },
+  {
+    title: "Enrollment",
+    href: "/dashboard/enrollment" as Route,
+    icon: QrCode,
   },
   {
     title: "Apps",

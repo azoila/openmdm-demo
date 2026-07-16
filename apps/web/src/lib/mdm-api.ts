@@ -318,6 +318,56 @@ export const mdmBulk = {
 };
 
 // ============================================
+// Enrollment (Android QR provisioning)
+// ============================================
+
+export interface EnrollmentQrOptions {
+  /** MDM base URL as reachable FROM THE DEVICE (not necessarily localhost). */
+  serverUrl?: string;
+  /** Agent APK download location — required for factory-reset provisioning. */
+  apkUrl?: string;
+  /** APK signing-cert SHA-256, URL-safe base64 — required alongside apkUrl. */
+  checksum?: string;
+  policyId?: string;
+  groupId?: string;
+}
+
+function enrollmentQrParams(options: EnrollmentQrOptions = {}): URLSearchParams {
+  const params = new URLSearchParams();
+  if (options.serverUrl) params.set("serverUrl", options.serverUrl);
+  if (options.apkUrl) params.set("apkUrl", options.apkUrl);
+  if (options.checksum) params.set("checksum", options.checksum);
+  if (options.policyId) params.set("policyId", options.policyId);
+  if (options.groupId) params.set("groupId", options.groupId);
+  return params;
+}
+
+export const mdmEnrollment = {
+  /** Default MDM base URL embedded in the QR when none is provided. */
+  defaultServerUrl: `${BASE_URL}/mdm`,
+
+  qrSvg: async (options?: EnrollmentQrOptions) => {
+    const params = enrollmentQrParams(options);
+    params.set("format", "svg");
+    const response = await fetch(`${BASE_URL}/mdm/enrollment/qr?${params}`, {
+      credentials: "include",
+    });
+    if (!response.ok) {
+      const error = await response
+        .json()
+        .catch(() => ({ error: response.statusText }));
+      throw new Error(error.error || `Request failed: ${response.status}`);
+    }
+    return response.text();
+  },
+
+  qrPayload: (options?: EnrollmentQrOptions) =>
+    fetchMDM<Record<string, unknown>>(
+      `/enrollment/qr?${enrollmentQrParams(options)}`
+    ),
+};
+
+// ============================================
 // Event Operations
 // ============================================
 
@@ -336,6 +386,7 @@ export const mdmEvents = {
 export const mdmApi = {
   dashboard: mdmDashboard,
   devices: mdmDevices,
+  enrollment: mdmEnrollment,
   kiosk: mdmKiosk,
   policies: mdmPolicies,
   apps: mdmApps,
